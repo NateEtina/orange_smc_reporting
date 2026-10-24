@@ -1,0 +1,15 @@
+Ticket;Date creation;Date resolution;semaine creation;priorite traitement;valeur champ 2;Statut SLA Retablissement;Duree;Titre
+G-2001;2026-09-21 08:00;2026-09-21 09:00;S39;P1;core CS;GOOD;1;Groupe horaire erroné
+G-2002;2026-09-22 10:00;;S39;P1;core CS;;;Service en cours de résolution
+G-2003;2026-09-21 08:00;2026-09-21 10:00;S39;P2;core CS;GOOD;2;VLAN manquant
+G-2004;2026-09-23 08:00;2026-09-23 18:00;S39;P2;core CS;BAD;10;QoS dégradée
+G-2005;2026-09-22 09:00;2026-09-22 12:00;S39;P2;Core IP;GOOD;3;Routes BGP instables
+G-2006;2026-09-24 09:00;2026-09-24 11:00;S39;P3;Core IP;BAD;2;NAT saturé
+G-2007;2026-09-21 08:00;2026-09-21 14:00;S39;P1;Core PS;BAD;6;Backup interrompu
+G-2008;2026-09-23 09:00;2026-09-23 10:00;S39;P4;Core PS;GOOD;1;Licence expirée
+G-2009;2026-09-22 08:00;2026-09-22 08:30;S39;P2;IN;GOOD;0.5;Notification SMS non reçue
+G-2010;2026-09-23 08:00;2026-09-23 09:30;S39;P2;VAS;GOOD;1.5;Filtre opérateur à mettre à jour
+G-2011;2026-09-24 08:00;2026-09-24 09:00;S39;P3;TRANS;GOOD;1;Routage EIG corrigé
+G-2012;2026-09-25 08:00;2026-09-25 08:45;S39;P1;IN/TRANS/VAS;GOOD;0.75;Plainte vocale
+G-2013;2026-09-18 08:00;2026-09-18 09:00;S38;P2;core CS;GOOD;1;Semaine précédente
+G-2014;2026-09-24 08:00;;S39;P4;Core IP;;;Contrat à renouveler

@@ -1,0 +1,47 @@
+Act as an expert software developer. 
+
+The previous feature implementation is working well, but we need to apply key adjustments and refinements to both the user interface/appearance and the underlying data processing logic for Feature 1. 
+
+Please incorporate the following updates directly into the existing project prototype.
+
+---
+
+### 🎨 1. APPEARANCE & UI ADJUSTMENTS
+
+1. **Theme Switcher:**
+   - Add a toggle/switch component to allow users to dynamically switch between Light Theme and Dark Theme across the application interface.
+
+2. **Week Number Input Validation:**
+   - Add a visual mandatory indicator (e.g., an asterisk `*`) to the Week Number input field.
+   - Enforce strict input validation on this field: accept **numeric digits only** (e.g., `38` or `39`). Automatically reject or disallow non-numeric characters, such as the prefix "S" (e.g., prevent inputs like `S38`).
+
+---
+
+### ⚙️ 2. FUNCTIONAL & CALCULATION REFINEMENTS
+
+1. **MTTR Calculation Logic:**
+   - For all target domains (`IT` from `brise_smc_week`, and `Core CS`, `Core IP`, `Core PS`, `IN/TRANS/VAS` from `GNOC_week`):
+     - Calculate the MTTR for **P1** and **P2** separately by taking the **average resolution time** using the resolution time column (**`Duree`**).
+     - **Filter Rule:** Include ONLY tickets where the resolution time (`Duree`) is **strictly greater than 0** (`Duree > 0`).
+     - Express the final MTTR value in **total hours** (ensure the formatting supports values over 24 hours, e.g., 36.5 hours).
+     - Populate the calculated MTTR values into the corresponding report cells.
+
+2. **SLA Threshold Rules for MTTR:**
+   - **P1 Tickets:** An MTTR value exceeding **4 hours** (> 4.0) is classified as **BAD**.
+   - **P2 Tickets:** An MTTR value exceeding **8 hours** (> 8.0) is classified as **BAD**.
+
+3. **Domain Grouping Mapping (`GNOC_week`):**
+   - The report category **`IN/TRANS/VAS`** must be treated as a composite domain.
+   - Map and combine records from the `GNOC_week` source file where the column **`valeur champ 2`** contains any of the following 3 distinct values: `IN`, `VAS`, or `TRANS`.
+
+4. **PowerPoint Highlight Formatting:**
+   - In the generated PowerPoint presentation (`hebdo_SXX`), apply visual highlighting (e.g., text color or cell fill adjustment) to any **P1** ticket record with an MTTR / resolution time > 4 hours, and any **P2** ticket record > 8 hours.
+
+5. **Null vs. Zero Percentage Handling:**
+   - Differentiate strictly between an **empty/missing percentage value** (no data available to evaluate) and a calculated **0.00%** value (evaluated result where compliance is zero).
+   - Ensure the report exporter does not replace blank/null SLA percentage entries with `0.00%`, maintaining distinct cell representations for both cases.
+
+---
+
+### 🚀 NEXT STEP
+Review these adjustments against our current prototype code. Ask me to share the relevant UI components, MTTR cazlculation functions, or PowerPoint generator modules so you can apply these rules directly without breaking existing functionality.

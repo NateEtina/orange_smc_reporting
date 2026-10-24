@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMC Hebdo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  // Apply the saved theme before first paint (avoids a light/dark flash).
+  (function () {
+    var stored = null;
+    try { stored = localStorage.getItem("theme"); } catch (e) {}
+    var theme = (stored === "dark" || stored === "light") ? stored
+      : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --panel: #ffffff;
+    --text: #17203a;
+    --muted: #667085;
+    --line: #e4e8f0;
+    --accent: #ea580c;
+    --accent-dark: #c2410c;
+    --ok: #16a34a;
+    --warn: #b45309;
+    --warn-bg: #fff7ed;
+    --danger: #dc2626;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 8px 24px -12px rgba(16, 24, 40, .18);
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 400px at 20% -10%, #ffedd5 0%, transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font: 15px/1.5 "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace; }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 22px clamp(16px, 4vw, 44px) 6px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo {
+    width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    box-shadow: 0 6px 16px -6px rgba(234, 88, 12, .7);
+  }
+  .brand h1 { font-size: 21px; margin: 0; letter-spacing: -.02em; }
+  .brand h1 span { color: var(--accent); }
+  .brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+  .nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  .nav a {
+    background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+    border-radius: 999px; padding: 5px 12px; font-size: 12.5px; box-shadow: var(--shadow);
+    text-decoration: none;
+  }
+  .nav a.active { border-color: var(--accent); color: var(--accent); background: #fff4eb; }
+  .nav a:hover { border-color: #f3c9a5; }
+
+  /* ---------- layout ---------- */
+  .layout {
+    display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, .85fr);
+    gap: 20px; padding: 18px clamp(16px, 4vw, 44px) 40px; align-items: start;
+  }
+  @media (max-width: 940px) { .layout { grid-template-columns: 1fr; } }
+  .col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    box-shadow: var(--shadow); padding: 18px;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .panel-head h2 { font-size: 15px; margin: 0; letter-spacing: -.01em; }
+  .panel-head h2 small { color: var(--muted); font-weight: 500; }
+  .note { color: var(--muted); font-size: 12.5px; margin: 10px 0 0; }
+
+  /* ---------- source pickers ---------- */
+  .sources { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .sources { grid-template-columns: 1fr; } }
+  .source {
+    border: 2px dashed #e8c9a8; border-radius: var(--radius); background: #fffcf9;
+    padding: 16px 14px; text-align: center; cursor: pointer; transition: .15s ease;
+    display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center;
+    min-height: 128px;
+  }
+  .source:hover { border-color: var(--accent); background: #fff4eb; }
+  .source.filled { border-style: solid; border-color: #bbf7d0; background: #f0fdf4; }
+  .source .tag {
+    font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--accent); background: #ffedd5; padding: 2px 8px; border-radius: 999px;
+  }
+  .source strong { font-size: 14px; }
+  .source .hint { color: var(--muted); font-size: 12px; }
+  .source .fname { font-size: 12.5px; color: var(--ok); font-weight: 600; word-break: break-all; }
+  .source .rm {
+    border: 0; background: none; color: var(--muted); cursor: pointer;
+    font-size: 13px; text-decoration: underline; padding: 2px;
+  }
+  .source .rm:hover { color: var(--danger); }
+
+  /* ---------- preview ---------- */
+  .meta-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    font-size: 11.5px; background: #fff3e6; border: 1px solid #ffdcc0; color: #b45309;
+    padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  .chip.green { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+  h3.sheet { font-size: 13.5px; margin: 16px 0 7px; }
+  h3.sheet:first-of-type { margin-top: 4px; }
+  .table-wrap { overflow: auto; max-height: 320px; border: 1px solid var(--line); border-radius: 10px; }
+  table.preview { border-collapse: collapse; font-size: 12.8px; min-width: 100%; }
+  table.preview th, table.preview td {
+    padding: 7px 10px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line);
+    text-align: left; white-space: nowrap;
+  }
+  table.preview thead th { position: sticky; top: 0; background: #fff9f4; z-index: 1; }
+  table.preview tbody tr:last-child td { border-bottom: 0; }
+  table.preview tbody tr:last-child td:first-child { font-weight: 600; background: #fff9f4; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.mttr-ok { background: #ecfdf3; color: #15803d; font-weight: 600; }
+  td.mttr-bad { background: #fff1f2; color: #be123c; font-weight: 600; }
+  td.dash { color: #b9c0cf; }
+
+  .warn {
+    background: var(--warn-bg); border: 1px solid #fed7aa; color: var(--warn);
+    border-radius: 10px; padding: 10px 12px; margin-top: 12px; font-size: 12.8px;
+  }
+  .warn ul { margin: 6px 0 0; padding-left: 18px; }
+
+  /* ---------- misc form bits ---------- */
+  .req { color: var(--danger); font-weight: 700; }
+  .field-hint { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; }
+  input.invalid { border-color: var(--danger); }
+
+  /* ---------- theme switcher ---------- */
+  .theme-toggle {
+    background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    border-radius: 0; width: 34px; height: 34px; padding: 0; cursor: pointer;
+    display: inline-grid; place-items: center; box-shadow: var(--shadow);
+    font-size: 15px; line-height: 1; transition: .15s ease;
+  }
+  .theme-toggle:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+  /* ---------- options ---------- */
+  details.opt { border-top: 1px solid var(--line); padding: 4px 0; }
+  details.opt:first-of-type { border-top: 0; }
+  details.opt summary {
+    cursor: pointer; font-weight: 600; font-size: 13.5px; padding: 10px 2px;
+    list-style: none; display: flex; align-items: center; gap: 8px;
+  }
+  details.opt summary::-webkit-details-marker { display: none; }
+  details.opt summary::before { content: "▸"; color: var(--accent); transition: transform .15s; font-size: 12px; }
+  details.opt[open] summary::before { transform: rotate(90deg); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; padding: 2px 0 14px; }
+  .grid .full { grid-column: 1 / -1; }
+  .field label { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 4px; font-weight: 600; letter-spacing: .01em; }
+  select, input[type="text"], input[type="date"] {
+    width: 100%; padding: 8px 9px; border: 1px solid var(--line); border-radius: 9px;
+    font: inherit; font-size: 13.5px; background: #fff; color: var(--text);
+  }
+  select:focus, input:focus { outline: 2px solid #ffd2ad; border-color: var(--accent); }
+
+  /* ---------- actions ---------- */
+  .actions { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .btn-row { display: flex; gap: 8px; }
+  button.primary {
+    flex: 1;
+    background: var(--accent); color: #fff; border: 0; border-radius: 0;
+    padding: 12px 16px; font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 10px 20px -12px rgba(234, 88, 12, .9); transition: .15s ease;
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  }
+  button.primary.ghost {
+    background: #fff; color: var(--accent); border: 1px solid #ffcda6; box-shadow: none;
+  }
+  button.primary:hover:not(:disabled) { background: var(--accent-dark); color: #fff; transform: translateY(-1px); }
+  button.primary.ghost:hover:not(:disabled) { background: #fff4eb; color: var(--accent); }
+  button.primary:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+  .spinner {
+    width: 15px; height: 15px; border: 2px solid rgba(255, 255, 255, .45);
+    border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- result ---------- */
+  .download {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d;
+    padding: 12px 14px; border-radius: 11px; text-decoration: none; font-weight: 600; font-size: 14px;
+  }
+  .download:hover { background: #dcfce7; }
+
+  /* ---------- toast ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+    background: #101828; color: #fff; padding: 12px 18px; border-radius: 11px;
+    font-size: 13.5px; box-shadow: 0 12px 30px -10px rgba(0, 0, 0, .5); z-index: 50;
+    max-width: min(90vw, 560px); display: flex; gap: 9px; align-items: flex-start;
+  }
+  .toast.error { background: #7f1d1d; }
+  .toast button { background: none; border: 0; color: inherit; cursor: pointer; opacity: .7; font-size: 15px; }
+  footer { margin-top: auto; text-align: center; color: var(--muted); font-size: 12.5px; padding: 10px 16px 24px; }
+
+  /* ================================================================ *
+   *  DARK THEME                                                      *
+   * ================================================================ */
+  [data-theme="dark"] {
+    --bg: #0d1117;
+    --panel: #151b26;
+    --text: #e6eaf2;
+    --muted: #9aa6bc;
+    --line: #263043;
+    --accent: #fb923c;
+    --accent-dark: #fdba74;
+    --ok: #3ddc84;
+    --warn: #f0b354;
+    --warn-bg: #2a1f10;
+    --danger: #f87171;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .6);
+  }
+  [data-theme="dark"] body {
+    background:
+      radial-gradient(1200px 400px at 20% -10%, rgba(249, 115, 22, .16) 0%, transparent 60%),
+      var(--bg);
+  }
+  [data-theme="dark"] .nav a.active { background: #33200f; }
+  [data-theme="dark"] .nav a:hover { border-color: #54391f; }
+  [data-theme="dark"] .source { border-color: #4a3722; background: #15110d; }
+  [data-theme="dark"] .source:hover { background: #1e1610; }
+  [data-theme="dark"] .source.filled { border-color: #1f5c3a; background: #0e1d15; }
+  [data-theme="dark"] .source .tag { background: #3a2412; }
+  [data-theme="dark"] .chip { background: #2e1e0e; border-color: #4a3016; color: #fdba74; }
+  [data-theme="dark"] .chip.green { background: #0f2418; border-color: #1d4a30; color: #7ee2a8; }
+  [data-theme="dark"] table.preview thead th,
+  [data-theme="dark"] table.preview tbody tr:last-child td:first-child { background: #1f1813; }
+  [data-theme="dark"] td.mttr-ok { background: #0d2419; color: #5fd68f; }
+  [data-theme="dark"] td.mttr-bad { background: #2a1218; color: #ff8fa3; }
+  [data-theme="dark"] td.dash { color: #5b6577; }
+  [data-theme="dark"] .warn { border-color: #5a3a15; }
+  [data-theme="dark"] select,
+  [data-theme="dark"] input[type="text"],
+  [data-theme="dark"] input[type="date"] { background: #15110d; }
+  [data-theme="dark"] select:focus,
+  [data-theme="dark"] input:focus { outline-color: rgba(251, 146, 60, .4); }
+  [data-theme="dark"] button.primary.ghost { background: #221a10; border-color: #5b3d1e; }
+  [data-theme="dark"] button.primary.ghost:hover:not(:disabled) { background: #2b2114; }
+  [data-theme="dark"] .download { background: #0e1d15; border-color: #1f5c3a; color: #5fd68f; }
+  [data-theme="dark"] .download:hover { background: #12261b; }
+  [data-theme="dark"] .spinner { border-color: rgba(255, 255, 255, .35); border-top-color: #fff; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>
+      </svg>
+    </div>
+    <div>
+      <h1>SMC Hebdo</h1>
+      <p>SMC Tickets and MTTR report</p>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="/">CSV → Excel</a>
+    <a href="/hebdo" class="active">Weekly report</a>
+    <button class="theme-toggle" id="themeToggle" type="button"
+            aria-label="Switch between light and dark theme" title="Switch theme">
+      <span id="themeIcon" aria-hidden="true">🌙</span>
+    </button>
+  </nav>
+</header>
+
+<main class="layout">
+  <!-- ======================= LEFT: sources & preview ======================= -->
+  <section class="col">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>1 · Weekly sources</h2>
+      </div>
+      <div class="sources">
+        <label class="source" id="briseZone" for="briseInput">
+          <span class="tag">brise_smc</span>
+          <span class="hint">.csv or .xlsx — week + active EDS filter</span>
+          <span class="fname" id="briseName" hidden></span>
+          <input type="file" id="briseInput" hidden accept=".csv,.tsv,.txt,.xlsx,.xlsm,text/csv,text/plain">
+        </label>
+        <label class="source" id="gnocZone" for="gnocInput">
+          <span class="tag">GNOC</span>
+          <span class="hint">.csv or .xlsx — grouped by “valeur champ 2”</span>
+          <span class="fname" id="gnocName" hidden></span>
+          <input type="file" id="gnocInput" hidden accept=".csv,.tsv,.txt,.xlsx,.xlsm,text/csv,text/plain">
+        </label>
+      </div>
+      <p class="note">Try the bundled samples: <span class="mono">sample-data/brise_smc_week39.csv</span>
+        + <span class="mono">sample-data/GNOC_week39.csv</span>.</p>
+    </div>
+
+    <div class="panel" id="previewPanel" hidden>
+      <div class="panel-head">
+        <h2>2 · Computed metrics <small id="previewLabel"></small></h2>
+        <div class="meta-chips" id="previewMeta"></div>
+      </div>
+      <div id="previewTables"></div>
+      <div class="warn" id="warnBox" hidden><b>Notes</b><ul id="warnList"></ul></div>
+    </div>
+  </section>
+
+  <!-- ======================= RIGHT: week, options & result ======================= -->
+  <section class="col">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Parameters</h2>
+      </div>
+
+      <details class="opt" open>
+        <summary>Target week</summary>
+        <div class="grid">
+          <div class="field">
+            <label for="weekInput">Week number <span class="req" title="Required">*</span></label>
+            <input type="text" id="weekInput" placeholder="39" autocomplete="off"
+                   inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-required="true">
+            <span class="field-hint">Mandatory · digits only (38 or 39).</span>
+          </div>
+          <div class="field">
+            <label for="dateInput">…or pick a date</label>
+            <input type="date" id="dateInput">
+            <span class="field-hint">Optional: only sets the year context (the week above wins).</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="opt">
+        <summary>Source column mapping</summary>
+        <div class="grid">
+          <div class="field full">
+            <label for="col_week">Week column</label>
+            <input type="text" id="col_week" data-col="week" placeholder="auto: semaine creation">
+          </div>
+          <div class="field full">
+            <label for="col_eds">Active EDS column (brise only)</label>
+            <input type="text" id="col_eds" data-col="eds" placeholder="auto: identifiant EDS active">
+          </div>
+          <div class="field full">
+            <label for="col_priority">Priority column</label>
+            <input type="text" id="col_priority" data-col="priority" placeholder="auto: priorite traitement">
+          </div>
+          <div class="field full">
+            <label for="col_sla">SLA column</label>
+            <input type="text" id="col_sla" data-col="sla" placeholder="auto: SLA / Statut SLA Retablissement">
+          </div>
+          <div class="field full">
+            <label for="col_domain">Domain column (GNOC only)</label>
+            <input type="text" id="col_domain" data-col="domain" placeholder="auto: valeur champ 2">
+          </div>
+          <div class="field full">
+            <label for="col_duration">Resolution time column (Duree)</label>
+            <input type="text" id="col_duration" data-col="duration" placeholder="auto: Duree (hours)">
+          </div>
+        </div>
+      </details>
+
+      <details class="opt">
+        <summary>Output</summary>
+        <div class="grid">
+          <div class="field full">
+            <label for="outputFormat">Generate</label>
+            <select id="outputFormat">
+              <option value="both">Excel + PowerPoint (.zip)</option>
+              <option value="xlsx">Excel only (hebdo_SXX.xlsx)</option>
+              <option value="pptx">PowerPoint only (hebdo_SXX.pptx)</option>
+            </select>
+          </div>
+        </div>
+        <p class="note">Excel fills the <span class="mono">hebdo_S38</span> template (Tickets, MTTR P1, MTTR P2).
+          <b>Ouvert</b> counts open tickets of the status column (<span class="mono">SLA</span> =
+          <i>En cours</i> in brise, blank <span class="mono">Statut SLA Retablissement</span> in GNOC);
+          <b>MTTR</b> = Σ <span class="mono">Duree</span> ÷ count over the <i>resolved</i> tickets
+          with <span class="mono">Duree &gt; 0</span> (blank/invalid durations excluded,
+          warned) shown as <span class="mono">HH:MM</span> — with only <b>one</b> closed ticket
+          in a domain, its <span class="mono">Duree</span> <i>is</i> the MTTR
+          (formats: <span class="mono">6</span>, <span class="mono">6,5</span>,
+          <span class="mono">36:30</span>, <span class="mono">3:26:0</span>,
+          <span class="mono">5h30</span>);
+          cells are flagged against the SLA targets — P1 &gt; 4 h / P2 &gt; 8 h is <b>BAD</b> (red).
+          A calculated 0 shows as <span class="mono">0</span> / <span class="mono">0.00%</span>,
+          no data shows as <span class="mono">-</span>.</p>
+      </details>
+
+      <div class="actions">
+        <div class="btn-row">
+          <button class="primary ghost" id="previewBtn" type="button" disabled>
+            <span id="previewLabel2">Preview metrics</span>
+          </button>
+          <button class="primary" id="generateBtn" type="button" disabled>
+            <span id="generateLabel">Generate report</span>
+          </button>
+        </div>
+        <p class="note" id="hint">Add both weekly sources to begin.</p>
+      </div>
+    </div>
+
+    <div class="panel" id="resultPanel" hidden>
+      <div class="panel-head"><h2>3 · Result</h2></div>
+      <a class="download" id="downloadBtn" href="#" download>
+        <span id="downloadName">Download</span>
+        <span id="downloadSize" class="mono"></span>
+      </a>
+      <p class="note" id="resultNote"></p>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastClose" aria-label="Close">×</button></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const state = { brise: null, gnoc: null, busy: false };
+
+  /* ---------------- theme switcher ---------------- */
+  function applyThemeIcon() {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    $("themeIcon").textContent = dark ? "☀️" : "🌙";
+    $("themeToggle").title = dark ? "Switch to light theme" : "Switch to dark theme";
+  }
+  $("themeToggle").addEventListener("click", () => {
+    const next = document.documentElement.getAttribute("data-theme") === "dark"
+      ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (err) {}
+    applyThemeIcon();
+  });
+  applyThemeIcon();
+
+  /* ---------------- week validation (digits only, mandatory) ---------------- */
+  function weekDigits() {
+    return /^[0-9]{1,2}$/.test($("weekInput").value);
+  }
+  $("weekInput").addEventListener("input", () => {
+    const digits = $("weekInput").value.replace(/[^0-9]/g, "").slice(0, 2);
+    if (digits !== $("weekInput").value) $("weekInput").value = digits;
+    updateActions();
+  });
+
+  const fmtBytes = (n) => {
+    if (n < 1024) return n + " B";
+    if (n < 1024 ** 2) return (n / 1024).toFixed(1) + " KB";
+    if (n < 1024 ** 3) return (n / 1024 ** 2).toFixed(1) + " MB";
+    return (n / 1024 ** 3).toFixed(2) + " GB";
+  };
+  const fmtInt = (n) => Number(n).toLocaleString();
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  /* ---------------- toast ---------------- */
+  let toastTimer = null;
+  function toast(message, isError = false) {
+    $("toastMsg").textContent = message;
+    $("toast").classList.toggle("error", isError);
+    $("toast").hidden = false;
+    clearTimeout(toastTimer);
+    if (!isError) toastTimer = setTimeout(() => { $("toast").hidden = true; }, 5000);
+  }
+  $("toastClose").addEventListener("click", () => { $("toast").hidden = true; });
+
+  /* ---------------- sources ---------------- */
+  function bindSource(key, inputId, zoneId, nameId) {
+    const input = $(inputId);
+    input.addEventListener("change", () => {
+      state[key] = input.files && input.files[0] ? input.files[0] : null;
+      renderSource(key, zoneId, nameId);
+      updateActions();
+    });
+    $(zoneId).addEventListener("dragover", (e) => e.preventDefault());
+    $(zoneId).addEventListener("drop", (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!file) return;
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      input.dispatchEvent(new Event("change"));
+    });
+  }
+
+  function renderSource(key, zoneId, nameId) {
+    const file = state[key];
+    const zone = $(zoneId);
+    const nameEl = $(nameId);
+    zone.classList.toggle("filled", Boolean(file));
+    nameEl.hidden = !file;
+    if (file) {
+      nameEl.textContent = `${file.name} · ${fmtBytes(file.size)}`;
+      nameEl.title = file.name;
+    }
+  }
+
+  bindSource("brise", "briseInput", "briseZone", "briseName");
+  bindSource("gnoc", "gnocInput", "gnocZone", "gnocName");
+
+  function updateActions() {
+    const weekOk = weekDigits();
+    const sources = Boolean(state.brise && state.gnoc);
+    const ready = sources && weekOk;
+    $("weekInput").classList.toggle("invalid", !weekOk);
+    $("weekInput").setAttribute("aria-invalid", String(!weekOk));
+    $("previewBtn").disabled = !ready || state.busy;
+    $("generateBtn").disabled = !ready || state.busy;
+    $("hint").textContent = !weekOk
+      ? "Week number is required — digits only (e.g. 39)."
+      : ready
+        ? "Both sources loaded — preview the metrics or generate the report."
+        : !state.brise && !state.gnoc ? "Add both weekly sources to begin."
+        : !state.brise ? "Still missing the brise_smc source." : "Still missing the GNOC source.";
+  }
+
+  function buildForm() {
+    const form = new FormData();
+    form.append("brise", state.brise, state.brise.name);
+    form.append("gnoc", state.gnoc, state.gnoc.name);
+    form.append("week", $("weekInput").value.trim());
+    form.append("date", $("dateInput").value);
+    const cols = {};
+    document.querySelectorAll("[data-col]").forEach((el) => {
+      const value = el.value.trim();
+      if (value) cols[el.dataset.col] = value;
+    });
+    form.append("columns", JSON.stringify(cols));
+    return form;
+  }
+
+  /* ---------------- preview ---------------- */
+  async function runPreview() {
+    if (!state.brise || !state.gnoc || !weekDigits() || state.busy) return;
+    const panel = $("previewPanel");
+    panel.hidden = false;
+    $("previewLabel").textContent = "";
+    $("previewMeta").innerHTML = '<span class="chip">processing…</span>';
+    $("previewTables").innerHTML = "";
+    $("warnBox").hidden = true;
+
+    try {
+      const res = await fetch("/api/hebdo/preview", { method: "POST", body: buildForm() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Preview failed");
+      renderMetrics(data);
+      toast("Metrics computed ✔");
+    } catch (err) {
+      $("previewMeta").innerHTML = "";
+      $("previewTables").innerHTML = `<p class="note">⚠ ${escapeHtml(err.message)}</p>`;
+      toast(err.message, true);
+    }
+  }
+
+  function rateText(rate) {
+    return rate === null || rate === undefined ? "-" : (rate * 100).toFixed(2) + "%";
+  }
+  function countText(n) {
+    // null/undefined = no data -> "-", a real 0 stays "0".
+    return n === null || n === undefined ? "-" : String(n);
+  }
+  function countCls(n) {
+    return n === null || n === undefined ? "num dash" : "num";
+  }
+
+  function table(headers, rows) {
+    const head = headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("");
+    const body = rows.map((cells) =>
+      `<tr>${cells.map((c) => `<td class="${c.cls}">${escapeHtml(c.text)}</td>`).join("")}</tr>`
+    ).join("");
+    return `<div class="table-wrap"><table class="preview"><thead><tr>${head}</tr></thead>` +
+           `<tbody>${body}</tbody></table></div>`;
+  }
+
+  function renderMetrics(m) {
+    $("previewLabel").textContent = m.week_label;
+    $("previewMeta").innerHTML = [
+      `<span class="chip green">${escapeHtml(m.week_label)} · ${escapeHtml(m.week_start)} → ${escapeHtml(m.week_end)}</span>`,
+      ...m.sources.map((s) => `<span class="chip">${escapeHtml(s.file)}: ${fmtInt(s.used)}/${fmtInt(s.rows)} rows used</span>`),
+    ].join("");
+
+    const cols = (title, headers, cellOf) =>
+      `<h3 class="sheet">${escapeHtml(title)}</h3>` +
+      table(headers, m.row_order.map((name) => cellOf(m.rows[name], name)));
+
+    const tickets = cols("Tickets", ["Domaine", "TT", "P1", "P2", "P3", "P4", "In SLA", "Hors SLA", "En cours"],
+      (row, name) => [
+        { text: name, cls: "" },
+        { text: countText(row.tt), cls: countCls(row.tt) },
+        ...["P1", "P2", "P3", "P4"].map((p) => ({
+          text: rateText(row.rates[p]),
+          cls: row.rates[p] === null ? "num dash" : "num",
+        })),
+        { text: countText(row.in_sla), cls: countCls(row.in_sla) },
+        { text: countText(row.hors_sla), cls: countCls(row.hors_sla) },
+        { text: countText(row.en_cours), cls: countCls(row.en_cours) },
+      ]);
+
+    const mttrSheet = (prio) => cols(`MTTR ${prio} — target ${prio === "P1" ? "4 h" : "8 h"}`,
+      ["Domaine", "MTTR", "Ouvert"], (row, name) => {
+        const value = row.mttr[prio];
+        const cls = !value ? "mttr dash"
+          : row.mttr_ok[prio] ? "mttr-ok" : "mttr-bad";
+        const ouvert = row.ouvert[prio];
+        return [
+          { text: name, cls: "" },
+          { text: value || "-", cls },
+          { text: countText(ouvert), cls: countCls(ouvert) },
+        ];
+      });
+
+    $("previewTables").innerHTML = tickets + mttrSheet("P1") + mttrSheet("P2");
+
+    const colChips = ["brise", "gnoc"].map((src) =>
+      Object.entries(m.columns[src])
+        .filter(([, header]) => header)
+        .map(([role, header]) => `<span class="chip">${src}.${escapeHtml(role)} → ${escapeHtml(header)}</span>`)
+    ).flat().join("");
+    $("previewTables").insertAdjacentHTML("afterbegin", `<div class="meta-chips" style="margin-bottom:6px">${colChips}</div>`);
+
+    const warnings = m.warnings || [];
+    $("warnBox").hidden = !warnings.length;
+    $("warnList").innerHTML = warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join("");
+    panelScroll();
+  }
+
+  function panelScroll() {
+    $("previewPanel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  /* ---------------- generate ---------------- */
+  async function runGenerate() {
+    if (!state.brise || !state.gnoc || !weekDigits() || state.busy) return;
+    state.busy = true;
+    updateActions();
+    $("generateLabel").textContent = "Generating…";
+    $("generateBtn").insertAdjacentHTML("afterbegin", '<span class="spinner" id="spin"></span>');
+
+    const form = buildForm();
+    form.append("output", $("outputFormat").value);
+
+    try {
+      const res = await fetch("/api/hebdo/generate", { method: "POST", body: form });
+      if (!res.ok) {
+        let detail = `Generation failed (HTTP ${res.status})`;
+        try { detail = (await res.json()).detail || detail; } catch (err) {}
+        throw new Error(detail);
+      }
+      const blob = await res.blob();
+      const cd = res.headers.get("Content-Disposition") || "";
+      const match = /filename="?([^";]+)"?/i.exec(cd);
+      const filename = match ? match[1] : "hebdo_report.zip";
+      const url = URL.createObjectURL(blob);
+      const btn = $("downloadBtn");
+      if (btn.dataset.url) URL.revokeObjectURL(btn.dataset.url);
+      btn.dataset.url = url;
+      btn.href = url;
+      btn.setAttribute("download", filename);
+      $("downloadName").textContent = `Download ${filename}`;
+      $("downloadSize").textContent = fmtBytes(blob.size);
+      $("resultNote").textContent = filename.endsWith(".zip")
+        ? "The archive contains the Excel workbook, the PowerPoint deck and the metrics JSON."
+        : "Generated from the hebdo_S38 template with dynamic week naming.";
+      $("resultPanel").hidden = false;
+      $("resultPanel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      toast("Report generated ✔");
+    } catch (err) {
+      toast(err.message, true);
+    } finally {
+      state.busy = false;
+      const spin = $("spin");
+      if (spin) spin.remove();
+      $("generateLabel").textContent = "Generate report";
+      updateActions();
+    }
+  }
+
+  $("previewBtn").addEventListener("click", runPreview);
+  $("generateBtn").addEventListener("click", runGenerate);
+
+  /* ---------------- init ---------------- */
+  updateActions();
+})();
+</script>
+</body>
+</html>

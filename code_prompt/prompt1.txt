@@ -1,0 +1,58 @@
+Act as an expert software developer. 
+
+I already have an existing application prototype, and we are incrementally building and integrating Feature 1 into the system: **Excel and PowerPoint Report Generation for Tickets and Incidents (P1/P2 MTTR)**. 
+
+Please design and integrate this feature following the exact functional specifications and business rules below, fitting into my application's existing design and architecture.
+
+---
+
+### 📌 OBJECTIVE
+Implement a processing module that ingests two weekly source datasets/files (`brise_smc_weekXX` and `GNOC_weekXX`) to automatically process metrics and populate a weekly Excel and PowerPoint report based on a structured template (`hebdo_SXX`).
+
+---
+
+### ⚙️ PROCESSING LOGIC & BUSINESS RULES
+
+#### 1. Dynamic Week Management
+- The system must accept or dynamically resolve the target week number (e.g., S38, S39 for the week of September 21st to 27th, etc.).
+- The base report template is `hebdo_S38` (containing 3 target sheets to complete). Output filenames and headers must dynamically update to reflect the target week number (e.g., `hebdo_S39`).
+
+---
+
+#### 2. Source Dataset 1 Processing: `brise_smc_weekXX`
+1. **Filtering:**
+   - Filter records by the target week using the column **`semaine creation`**.
+   - Filter active organizational units in column **`identifiant EDS active`** to retain only: `505010`, `555402`, and `610136`.
+2. **Aggregations & Calculations:**
+   - Group and count total tickets by priority in column **`priorite traitement`** (P1, P2, P3, P4).
+   - Evaluate the **`SLA`** column to tally statuses: `BAD`, `GOOD`, and `En Cours`.
+   - Calculate SLA compliance rate: $(\text{SLA Count} / \text{Total Tickets}) \times 100$ per priority level.
+3. **MTTR Calculation (Mean Time To Resolve):**
+   - Calculate resolution times (MTTR) separately for **P1** (Target SLA = 4 Hours) and **P2** (Target SLA = 8 Hours).
+4. **Report Injection:**
+   - Inject the processed metrics into all 3 sheets of the report template specifically under the **`IT`** domain/category row.
+
+---
+
+#### 3. Source Dataset 2 Processing: `GNOC_weekXX`
+1. **Filtering:**
+   - Filter records by the target week using column **`semaine creation`**.
+2. **Aggregations & Calculations:**
+   - Group and count tickets by priority (**`priorite traitement`**) AND by domain via column **`valeur champ 2`**.
+   - Evaluate the **`SLA`** column to tally statuses: `BAD`, `GOOD`, or `vide` (blank/empty).
+   - Calculate SLA compliance percentage: $(\text{Total SLA} / \text{Total Tickets}) \times 100$ per priority.
+3. **MTTR Calculation:**
+   - Calculate MTTR separately for P1 (4h target) and P2 (8h target) for each domain.
+4. **Report Injection:**
+   - Inject calculated metrics into the 3 sheets of the report template, mapping each sub-domain to its corresponding row:
+     - `core CS`
+     - `core IP`
+     - `core PS`
+     - `IN/TRANS/VAS`
+
+*Note: Source column headers and template row labels are in French as specified.*
+
+---
+
+### 🚀 NEXT STEP
+Review these business rules against my current application architecture. Ask me to share the existing file structure, current data handlers, or template models so you can write the logic directly compatible with my prototype without introducing conflicting file names or redundant tech stacks.
